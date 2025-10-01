@@ -7,7 +7,7 @@ import asyncio
 import json
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 import httpx
 from dotenv import load_dotenv
@@ -134,7 +134,7 @@ def get_user_info(client, headers):
 				user_data = data.get('data', {})
 				quota = round(user_data.get('quota', 0) / 500000, 2)
 				used_quota = round(user_data.get('used_quota', 0) / 500000, 2)
-				return f':money: Current balance: ${quota}, Used: ${used_quota}'
+				return f'Current balance: ${quota}, Used: ${used_quota}'
 	except Exception as e:
 		return f'[FAIL] Failed to get user info: {str(e)[:50]}...'
 	return None
@@ -235,8 +235,12 @@ async def check_in_account(account_info, account_index):
 
 async def main():
 	"""主函数"""
+	# 设置东八区时区
+	tz_utc8 = timezone(timedelta(hours=8))
+	current_time = datetime.now(tz_utc8)
+
 	print('[SYSTEM] AnyRouter.top multi-account auto check-in script started (using Playwright)')
-	print(f'[TIME] Execution time: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
+	print(f'[TIME] Execution time: {current_time.strftime("%Y-%m-%d %H:%M:%S")}')
 
 	# 加载账号配置
 	accounts = load_accounts()
@@ -267,20 +271,21 @@ async def main():
 			notification_content.append(f'[FAIL] Account {i + 1} exception: {str(e)[:50]}...')
 
 	# 构建通知内容
-	summary = [
-		'[STATS] Check-in result statistics:',
-		f'[SUCCESS] Success: {success_count}/{total_count}',
-		f'[FAIL] Failed: {total_count - success_count}/{total_count}',
-	]
+	summary = ['[STATS] Check-in result statistics:']
 
+	# 根据成功/失败情况，只显示有意义的一项
 	if success_count == total_count:
+		summary.append(f'[SUCCESS] Success: {success_count}/{total_count}')
 		summary.append('[SUCCESS] All accounts check-in successful!')
-	elif success_count > 0:
-		summary.append('[WARN] Some accounts check-in successful')
-	else:
+	elif success_count == 0:
+		summary.append(f'[FAIL] Failed: {total_count}/{total_count}')
 		summary.append('[ERROR] All accounts check-in failed')
+	else:
+		summary.append(f'[SUCCESS] Success: {success_count}/{total_count}')
+		summary.append(f'[FAIL] Failed: {total_count - success_count}/{total_count}')
+		summary.append('[WARN] Some accounts check-in successful')
 
-	time_info = f'[TIME] Execution time: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+	time_info = f'[TIME] Execution time: {current_time.strftime("%Y-%m-%d %H:%M:%S")}'
 
 	notify_content = '\n\n'.join([time_info, '\n'.join(notification_content), '\n'.join(summary)])
 
