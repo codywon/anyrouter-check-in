@@ -27,7 +27,9 @@ class NotificationKit:
 		msg['To'] = self.email_to
 		msg['Subject'] = title
 
-		body = MIMEText(content, msg_type, 'utf-8')
+		# 将 'text' 转换为正确的 MIME 子类型 'plain'
+		subtype = 'plain' if msg_type == 'text' else msg_type
+		body = MIMEText(content, subtype, 'utf-8')
 		msg.attach(body)
 
 		smtp_server = f'smtp.{self.email_user.split("@")[1]}'
