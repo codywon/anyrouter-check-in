@@ -4,7 +4,7 @@
 
 **维护开源不易，如果本项目帮助到了你，请帮忙点个 Star，谢谢!**
 
-用于 Claude Code 中转站 Any Router 多账号每日签到，一次 $25，限时注册即送 100 美金，[点击这里注册](https://anyrouter.top/register?aff=gSsN)。业界良心，支持 Claude Code 百万上下文（使用 `/model sonnet[1m]` 开启），`gemini-2.5-pro` 模型。
+用于 Claude Code 中转站 Any Router 多账号每日签到，一次 $25，限时注册即送 100 美金，[点击这里注册](https://anyrouter.top/register?aff=gSsN)。业界良心，支持 Claude Sonnet 4.5、GPT-5-Codex、Claude Code 百万上下文（使用 `/model sonnet[1m]` 开启），`gemini-2.5-pro` 模型。
 
 ## 功能特性
 
@@ -47,17 +47,19 @@
 
 ### 4. 多账号配置格式
 
-支持单个与多个
+支持单个与多个账号配置，可选 `name` 字段用于自定义账号显示名称：
 
 ```json
 [
   {
+    "name": "我的主账号",
     "cookies": {
       "session": "account1_session_value"
     },
     "api_user": "account1_api_user_id"
   },
   {
+    "name": "备用账号",
     "cookies": {
       "session": "account2_session_value"
     },
@@ -65,6 +67,13 @@
   }
 ]
 ```
+
+**字段说明**：
+- `cookies` (必需)：用于身份验证的 cookies 数据
+- `api_user` (必需)：用于请求头的 new-api-user 参数
+- `name` (可选)：自定义账号显示名称，用于通知和日志中标识账号
+
+如果未提供 `name` 字段，会使用 `Account 1`、`Account 2` 等默认名称。
 
 接下来获取 cookies 与 api_user 的值。
 
@@ -134,8 +143,8 @@
 ### 邮箱通知
 - `EMAIL_USER`: 发件人邮箱地址
 - `EMAIL_PASS`: 发件人邮箱密码/授权码
+- `CUSTOM_SMTP_SERVER`: 自定义发件人SMTP服务器(可选)
 - `EMAIL_TO`: 收件人邮箱地址
-
 ### 钉钉机器人
 - `DINGDING_WEBHOOK`: 钉钉机器人的 Webhook 地址
 
