@@ -361,17 +361,36 @@ async def main():
 		else:
 			print('[INFO] No balance changes detected')
 
-	# 为有余额变化的情况添加所有成功账号到通知内容
+	# 为有余额变化的情况添加所有账号到通知内容
 	if balance_changed:
+		# 需要跟踪哪些账号签到成功了
+		successful_accounts = set()
 		for i, account in enumerate(accounts):
 			account_key = f'account_{i + 1}'
+			account_name = get_account_display_name(account, i)
+
+			# 检查是否已经在通知内容中（避免重复）
+			if any(account_name in item for item in notification_content):
+				continue
+
 			if account_key in current_balances:
-				account_name = get_account_display_name(account, i)
-				# 只添加成功获取余额的账号，且避免重复添加
+				# 成功获取余额的账号
 				account_result = f'[BALANCE] {account_name}'
-				account_result += f'\n:money: Current balance: ${current_balances[account_key]["quota"]}, Used: ${current_balances[account_key]["used"]}'
-				# 检查是否已经在通知内容中（避免重复）
-				if not any(account_name in item for item in notification_content):
+				account_result += f'\nCurrent balance: ${current_balances[account_key]["quota"]}, Used: ${current_balances[account_key]["used"]}'
+				notification_content.append(account_result)
+				successful_accounts.add(i)
+
+		# 添加签到成功但获取余额失败的账号
+		for i, account in enumerate(accounts):
+			if i not in successful_accounts:
+				account_key = f'account_{i + 1}'
+				account_name = get_account_display_name(account, i)
+				# 检查该账号是否签到成功（通过检查是否在失败通知中）
+				is_in_notification = any(account_name in item for item in notification_content)
+				if not is_in_notification:
+					# 签到成功但获取余额失败
+					account_result = f'[BALANCE] {account_name}'
+					account_result += f'\n获取余额失败'
 					notification_content.append(account_result)
 
 	# 保存当前余额hash
