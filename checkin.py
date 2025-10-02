@@ -8,7 +8,7 @@ import hashlib
 import json
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 import httpx
 from dotenv import load_dotenv
@@ -19,6 +19,8 @@ from notify import notify
 load_dotenv()
 
 BALANCE_HASH_FILE = 'balance_hash.txt'
+# 定义东八区时区
+UTC_PLUS_8 = timezone(timedelta(hours=8))
 
 
 def load_accounts():
@@ -284,7 +286,7 @@ async def check_in_account(account_info, account_index):
 async def main():
 	"""主函数"""
 	print('[SYSTEM] AnyRouter.top multi-account auto check-in script started (using Playwright)')
-	print(f'[TIME] Execution time: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
+	print(f'[TIME] Execution time: {datetime.now(UTC_PLUS_8).strftime("%Y-%m-%d %H:%M:%S")}')
 
 	# 加载账号配置
 	accounts = load_accounts()
@@ -399,11 +401,19 @@ async def main():
 
 	if need_notify and notification_content:
 		# 构建通知内容
-		summary = [
-			'[STATS] Check-in result statistics:',
-			f'[SUCCESS] Success: {success_count}/{total_count}',
-			f'[FAIL] Failed: {total_count - success_count}/{total_count}',
-		]
+		summary = ['[STATS] Check-in result statistics:']
+
+		# 根据成功失败情况动态显示统计信息
+		if success_count == total_count:
+			# 全部成功，只显示成功数量
+			summary.append(f'[SUCCESS] Success: {success_count}/{total_count}')
+		elif success_count == 0:
+			# 全部失败，只显示失败数量
+			summary.append(f'[FAIL] Failed: {total_count}/{total_count}')
+		else:
+			# 部分成功，显示成功和失败数量
+			summary.append(f'[SUCCESS] Success: {success_count}/{total_count}')
+			summary.append(f'[FAIL] Failed: {total_count - success_count}/{total_count}')
 
 		if success_count == total_count:
 			summary.append('[SUCCESS] All accounts check-in successful!')
@@ -412,12 +422,12 @@ async def main():
 		else:
 			summary.append('[ERROR] All accounts check-in failed')
 
-		time_info = f'[TIME] Execution time: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+		time_info = f'[TIME] Execution time: {datetime.now(UTC_PLUS_8).strftime("%Y-%m-%d %H:%M:%S")}'
 
 		notify_content = '\n\n'.join([time_info, '\n'.join(notification_content), '\n'.join(summary)])
 
 		print(notify_content)
-		notify.push_message('AnyRouter Check-in Alert', notify_content, msg_type='text')
+		notify.push_message('AnyRouter Check-in Report', notify_content, msg_type='text')
 		print('[NOTIFY] Notification sent due to failures or balance changes')
 	else:
 		print('[INFO] All accounts successful and no balance changes detected, notification skipped')
